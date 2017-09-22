@@ -70,6 +70,10 @@ ground = 5
 BLOCK_SIZE = 16
 IMAGE_EPSILON = 0.5
 
+
+def save(img, name='out.png'):
+    img.save(name)
+
 class ImageCrop:
 
     aboveitems = {
@@ -137,24 +141,13 @@ class ImageCrop:
 
 
     def bfs_pipe(self, x, y):
-        min_x = x
-        max_x = x
-        min_y = y
-        max_y = y
-        stack = [(x,y)]
-        while stack:
+        self.bfs(x, y, [self.search_items['pipe']])
 
-            ...
-
-    def bfs(self, x, y, img_or_list):
+    def bfs(self, x, y, list_of_histogram):
         # can be image or list of images
 
-        if isinstance(img_or_list, Image.Image):
-            list_img = [img_or_list]
-        else:
-            list_img = img_or_list
 
-        assert isinstance(list_img, (tuple, list))
+        assert isinstance(list_of_histogram, (tuple, list))
 
         min_x = x
         max_x = x
@@ -166,7 +159,8 @@ class ImageCrop:
         while stack:
             current = stack.pop()
             for xy in self.get_points(*current):
-                if self.match(self.get_image(*xy), list_img):
+                current_image = self.get_image(*xy)
+                if self.match(current_image, list_of_histogram):
                     self.todo_items.remove(xy)
                     stack.append(xy)
                     min_x = min(min_x, xy[0])
@@ -180,6 +174,9 @@ class ImageCrop:
 
     def match(self, img, list):
         return any((self.is_close(img, match) for match in list))
+
+
+
 
     @staticmethod
     def is_close(img1, img2):
@@ -232,9 +229,10 @@ class ImageCrop:
         while self.todo_items:
             x,y = self.todo_items.pop()
             img = self.get_image(x,y)
+            hist = img.histogram()
 
             for name, comp_img in self.search_items.items():
-                if self.rms(img ,comp_img) < 0.5:
+                if self.rms(hist ,comp_img) < 0.5:
                     if name == "pipe":
                         self.bfs_pipe(x, y)
 
