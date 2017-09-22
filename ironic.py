@@ -382,11 +382,11 @@ def unittest():
 # = top pixel before off ground for images
 unittest()
 
-#level1 = ImageCrop(0, 240, join("maps","1-1.png"), ImageCrop.aboveitems, background_color="#5c94fc", map_name="1-1above")
-#level1.search()
-
-level1 = ImageCrop(0, 480, join("maps","2-1.png"), ImageCrop.aboveitems, background_color="#5c94fc", map_name="2-1above")
+level1 = ImageCrop(0, 240, join("maps","1-1.png"), ImageCrop.aboveitems, background_color="#5c94fc", map_name="1-1above")
 level1.search()
+
+#level1 = ImageCrop(0, 480, join("maps","2-1.png"), ImageCrop.aboveitems, background_color="#5c94fc", map_name="2-1above")
+#level1.search()
 
 #level1 = ImageCrop(0, 240, join("maps","1-3.png"), ImageCrop.aboveitems, background_color="#5c94fc", map_name="2-1above")
 #level1.search()
