@@ -113,6 +113,8 @@ class ImageCrop:
         'brickMushroom' : Image.open(join('above', 'brickmushroom.png')).histogram(),
 
         'goomba': Image.open(join('above', 'goomba.png')).histogram(),
+        'koopa' : Image.open(join('above', 'koopa.png')).histogram(),
+
         'ground': Image.open(join("above", "ground.png")).histogram(),
 
         'questionMushroom': Image.open(join('above', "questionmushroom.png")).histogram(),
@@ -121,13 +123,16 @@ class ImageCrop:
         'invisCoin' : Image.open(join('above', 'inviscoin.png')).histogram(),
         'invis1up' : Image.open(join('above', 'invis1up.png')).histogram(),
 
-        'cloud' : Image.open(join('above', 'cloud.png'))
+        'cloud' : Image.open(join('above', 'cloud.png')).histogram(),
+        'flag' : Image.open(join("above", 'flagtop.png')).histogram()
     },
     [Image.open(join('above', 'pipe1.png')).histogram(),
      Image.open(join('above', 'pipe2.png')).histogram(),
      Image.open(join('above', 'pipe3.png')).histogram(),
      Image.open(join('above', 'pipe4.png')).histogram()
      ])
+
+
     belowitems = {
         'brick': Image.open(join('below', "brick.png")).histogram(),
         'metal': Image.open(join('below', 'metal.png')).histogram(),
@@ -334,6 +339,9 @@ class ImageCrop:
 
                     elif name == 'coin':
                         self.json.add_entity('entCoin', x, y)
+
+                    elif name == 'flag':
+                        self.json.add_block('flag', x, y-9)
 
 
 
