@@ -609,6 +609,12 @@
                 5,
                 "Coin"
             ]
+        ],
+        "blockInvis1up": [
+            [
+                64,
+                6
+            ]
         ]
     },
     "entities": {},
