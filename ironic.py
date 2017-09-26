@@ -16,10 +16,10 @@ class JsonMap:
         self.set_theme(theme)
 
     def set_width(self, length):
-        self.dict['background'][1] = length
+        self.dict['width'] = length
 
     def set_height(self, width):
-        self.dict['background'][2] = width
+        self.dict['height'] = width
 
     def set_theme(self, theme):
         self.dict['theme'] = theme
@@ -28,7 +28,7 @@ class JsonMap:
     def set_background_color(self, str):
         assert str.startswith("#")
 
-        self.dict['background'][0] = str
+        self.dict['background'] = str
 
     def set_map_name(self, str):
         self.dict['MapName'] = str
@@ -58,8 +58,12 @@ class JsonMap:
         self.dict['MapName'] = ''
         self.dict['blocks'] = OrderedDict()
         self.dict['entities'] = OrderedDict()
-        self.dict['background'] = [None, None, None]
+        self.dict['background'] = None
         self.dict['default_entry'] = [0, 64]
+        self.dict['width'] = None
+        self.dict['height'] = None
+
+
 
     def sort(self):
         for item in self.dict['blocks'].values():
@@ -110,6 +114,8 @@ class ImageCrop:
         'pipe': Image.open(join('above', "pipe.png")).histogram(),
 
         'brickCoin': Image.open(join('above', 'brickcoin.png')).histogram(),
+        'brickStar': Image.open(join('above', 'brickstar.png')).histogram(),
+
         'brickMushroom' : Image.open(join('above', 'brickmushroom.png')).histogram(),
 
         'goomba': Image.open(join('above', 'goomba.png')).histogram(),
@@ -133,22 +139,33 @@ class ImageCrop:
      ])
 
 
-    belowitems = {
-        'brick': Image.open(join('below', "brick.png")).histogram(),
-        'metal': Image.open(join('below', 'metal.png')).histogram(),
-        'pipe' : Image.open(join('below', 'pipe.png')).histogram(),
+    belowitems = TextureStore({
+        'brick' : Image.open(join('below', "brick.png")).histogram(),
+        'metal': Image.open(join('below', "metal.png")).histogram(),
+        'pipe': Image.open(join('below', "pipe.png")).histogram(),
 
-        'brickCoin': Image.open(join('below','brickcoin.png')).histogram(),
-
+        'brickCoin': Image.open(join('below', 'brickcoin.png')).histogram(),
         'brickStar': Image.open(join('below', 'brickstar.png')).histogram(),
-        'brickMushroom': Image.open(join('below', 'brickmushroom.png')).histogram(),
 
+        'brickMushroom' : Image.open(join('below', 'brickmushroom.png')).histogram(),
 
-        'coin' : Image.open(join('below', 'coin.png')).histogram(),
         'goomba': Image.open(join('below', 'goomba.png')).histogram(),
-        'koopa': Image.open(join('below', 'koopa.png')).histogram(),
+        'koopa' : Image.open(join('below', 'koopa.png')).histogram(),
 
-        }
+        'ground': Image.open(join("above", "ground.png")).histogram(),
+        'belowGround' : Image.open(join("below", "ground.png")).histogram(),
+
+        'questionMushroom': Image.open(join('below', "questionmushroom.png")).histogram(),
+        'questionCoin': Image.open(join('below', 'questioncoin.png')).histogram(),
+
+
+        'flag' : Image.open(join("above", 'flagtop.png')).histogram()
+    },
+    [Image.open(join('below', 'pipe1.png')).histogram(),
+     Image.open(join('below', 'pipe2.png')).histogram(),
+     Image.open(join('below', 'pipe3.png')).histogram(),
+     Image.open(join('below', 'pipe4.png')).histogram()
+     ])
 
     def get_image(self, x, y):
         return self.map.crop((self.startx + x*BLOCK_SIZE,
@@ -156,21 +173,29 @@ class ImageCrop:
                               self.startx + (x+1)*BLOCK_SIZE,
                               self.starty - y*BLOCK_SIZE))
 
+    def save_json(self, fname=None):
+        if not fname:
+            fname = self.map_name + '.json'
+        with open(fname, 'w') as f:
+            f.write(self.json.dumps())
 
 
-    def __init__(self, startx, starty, fp, search_items, json=None, background_color="#000000", map_name=""):
+    def __init__(self, startx, starty, fp, search_items, json=None, endx=-1, endy=-1, background_color="#000000", map_name="unknownlevel"):
         self.json = json if json is not None else JsonMap()
         self.fp = fp
         self.startx = startx
         self.starty = starty
         self.map = Image.open(fp)
+        self.map_name = map_name
 
+        self.endx = self.map.width if endx == -1 else endx
+        self.endy = 0 if endy == -1 else endy
 
         self.width =self.map.width
         self.height = self.map.height
 
-        self.width_blocks = (self.width - startx) // BLOCK_SIZE
-        self.height_blocks = (starty) // BLOCK_SIZE
+        self.width_blocks = (self.endx - startx) // BLOCK_SIZE
+        self.height_blocks = (starty - self.endy) // BLOCK_SIZE
 
         self.search_items = search_items
 
@@ -269,19 +294,9 @@ class ImageCrop:
     def bfs_ground(self, x, y):
         return self.bfs(x, y, [self.search_items.rawsearch['ground']])
 
-    """
-    'brick' : Image.open(join('above', "brick.png")).histogram(),
-    'metal': Image.open(join('above', "metal.png")).histogram(),
-    'pipe': Image.open(join('above', "pipe.png")).histogram(),
+    def bfs_below_ground(self, x, y):
+        return self.bfs(x, y, [self.search_items.rawsearch['belowGround']])
 
-    'brickCoin': Image.open(join('above', 'brickcoin.png')).histogram(),
-
-    'goomba': Image.open(join('above', 'goomba.png')).histogram(),
-    'ground': Image.open(join("above", "ground.png")).histogram(),
-
-    'questionMushroom': Image.open(join('above', "questionmushroom.png")).histogram(),
-    'questionCoin': Image.open(join('above', 'questioncoin.png')).histogram(),
-    """
 
     def search(self):
         # start x, start y is top left of first block
@@ -300,6 +315,10 @@ class ImageCrop:
                     if name == 'brick':
                         self.json.add_block('blockBreakableBrick', x, y)
 
+                    elif name == 'belowGround':
+                        opts = self.bfs_below_ground(x, y)
+                        self.json.add_block('groundPlatform', *opts)
+
                     elif name == 'metal':
                         self.json.add_block('blockMetal', x, y)
 
@@ -311,6 +330,7 @@ class ImageCrop:
                     elif name == 'ground':
                         opts = self.bfs_ground(x, y)
                         self.json.add_block('groundPlatform', *opts)
+
 
                     elif name == 'questionMushroom':
                         self.json.add_block('blockQuestion', x, y, "DefaultFire")
@@ -343,7 +363,14 @@ class ImageCrop:
                     elif name == 'flag':
                         self.json.add_block('flag', x, y-9)
 
+                    elif name == 'brickStar':
+                        self.json.add_block('blockBrickStar', x, y)
 
+                    elif name == 'brickMushroom':
+                        self.json.add_block('BlockBrickPowerUp', x, y)
+
+                    elif name=='cloud':
+                        self.json.add_block('blockCloud', x, y)
 
 
 
@@ -388,9 +415,6 @@ def unittest():
     assert ImageCrop.is_close(test.get_image(0, 0), Image.open(join('tests', 'aboveground.png')))
     assert ImageCrop.is_close(test.get_image(1, 0), Image.open(join('tests', 'aboveground.png')))
     #assert ImageCrop.is_close(test.get_image(0, 2), Image.open(join('tests', '1.3.png')))
-    save(test.get_image(80, 9), 'test.png')
-    save(test.get_image(80, 10), 'test.png')
-    save(test.get_image(81, 9), 'test.png')
 
     #test.search()
     print("passed unittests")
@@ -404,15 +428,30 @@ unittest()
 
 level1 = ImageCrop(0, 240, join("maps","1-1.png"), ImageCrop.aboveitems, background_color="#5c94fc", map_name="1-1above")
 level1.search()
+level1.save_json()
+print("Done lv1 top")
 
-#level1 = ImageCrop(0, 480, join("maps","2-1.png"), ImageCrop.aboveitems, background_color="#5c94fc", map_name="2-1above")
-#level1.search()
+level1under = ImageCrop(2368, 480, join("maps","1-1.png"), ImageCrop.belowitems, background_color="#000000", map_name="1-1under", endy=272)
+level1under.search()
+level1under.save_json()
+print("Done lv1 bot")
 
-#level1 = ImageCrop(0, 240, join("maps","1-3.png"), ImageCrop.aboveitems, background_color="#5c94fc", map_name="2-1above")
-#level1.search()
+'''
+level2 = ImageCrop(0, 480, join("maps","1-2.png"), ImageCrop.belowitems, background_color="#000000", map_name="1-2below")
+level2.search()
+level2.save_json()
+'''
 
+'''
+level3 = ImageCrop(0, 240, join("maps","1-3.png"), ImageCrop.aboveitems, background_color="#5c94fc", map_name="1-3above")
+level3.search()
+level3.save_json()
+'''
+
+level1 = ImageCrop(0, 480, join("maps","2-1.png"), ImageCrop.aboveitems, background_color="#5c94fc", map_name="2-1above")
+level1.search()
+level1.save_json()
+print("finished")
 
 
 #ImageCrop.get_cord(Image.open("maps/1-2.png"), 70 ,7, 0, 464)
-with open('out.json', 'w') as f:
-    f.write(level1.json.dumps())
