@@ -375,41 +375,35 @@
             [
                 46,
                 2,
-                2,
                 4,
-                "none"
+                "plant"
             ],
             [
                 74,
                 2,
-                2,
                 4,
-                "none"
+                "plant"
             ],
             [
                 103,
                 2,
-                2,
                 4,
-                "none"
+                "plant"
             ],
             [
                 115,
                 2,
                 2,
-                2,
-                "none"
+                "plant"
             ],
             [
                 122,
                 2,
-                2,
                 4,
-                "none"
+                "plant"
             ],
             [
                 126,
-                2,
                 2,
                 3,
                 "none"
@@ -417,16 +411,14 @@
             [
                 130,
                 2,
-                2,
                 5,
-                "none"
+                "plant"
             ],
             [
                 176,
                 2,
-                2,
                 3,
-                "none"
+                "plant"
             ]
         ],
         "blockBreakableBrick": [
@@ -815,5 +807,6 @@
     ],
     "width": 7168,
     "height": 960,
+    "MapTime": 300,
     "theme": "overworld"
 }

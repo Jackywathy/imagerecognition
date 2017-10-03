@@ -23,13 +23,27 @@ ground = 5
 BLOCK_SIZE = 16
 IMAGE_EPSILON = 1
 
+class BfsObject:
+    def __init__(self, x, y, width, height, extra=False):
+        """x, y is bottom and left"""
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.extra = extra
+
+    def rect(self):
+        return self.x, self.y, self.width, self.height
+
+
 
 def save(img, name='out.png'):
     img.save(name)
 
 class TextureStore:
-    def __init__(self, searchitems, pipe):
+    def __init__(self, searchitems, pipe, plant):
         self.pipe = list(pipe)
+        self.plant = list(plant)
         self.rawsearch = searchitems
 
     def searchitems(self):
@@ -66,7 +80,9 @@ class ImageCrop:
      Image.open(join('above', 'pipe2.png')).histogram(),
      Image.open(join('above', 'pipe3.png')).histogram(),
      Image.open(join('above', 'pipe4.png')).histogram()
-     ])
+     ],
+    [Image.open(join("above", "plant.png")).histogram()]
+    )
 
 
     belowitems = TextureStore({
@@ -95,7 +111,9 @@ class ImageCrop:
      Image.open(join('below', 'pipe2.png')).histogram(),
      Image.open(join('below', 'pipe3.png')).histogram(),
      Image.open(join('below', 'pipe4.png')).histogram()
-     ])
+     ],
+     [Image.open(join('below', 'plant.png')).histogram()]
+    )
 
     def get_image(self, x, y):
         return self.map.crop((self.startx + x*BLOCK_SIZE,
@@ -147,14 +165,16 @@ class ImageCrop:
 
 
     def bfs_pipe(self, x, y):
+        return self.bfs(x, y, self.search_items.pipe, self.search_items.plant)
 
-        return self.bfs(x, y, self.search_items.pipe)
 
-    def bfs(self, x, y, list_of_histogram):
+    def bfs(self, x, y, list_of_histogram, extra=None):
         # can be image or list of images
 
-
         assert isinstance(list_of_histogram, (tuple, list))
+
+        has_extra = False
+
 
         min_x = x
         max_x = x
@@ -170,6 +190,14 @@ class ImageCrop:
             current = stack.pop()
             for xy in self.get_points(*current):
                 current_image = self.get_image(*xy)
+                try:
+                    if extra and self.match(current_image, extra):
+                        # match the plant for pipes
+                        has_extra = True
+                except:
+                    print(extra)
+                    raise
+
                 if xy not in done and self.match(current_image, list_of_histogram):
                     if xy in self.todo_items:
                         self.todo_items.remove(xy)
@@ -180,22 +208,23 @@ class ImageCrop:
                     min_y = min(min_y, xy[1])
                     max_y = max(max_y, xy[1])
 
-        return min_x, min_y, max_x - min_x+1, max_y - min_y+1
+        return BfsObject(min_x, min_y, max_x - min_x+1, max_y - min_y+1, has_extra)
         # returns a rect Tuple of bottomleft, with width and height
 
 
-    def match(self, img, list):
-        return any((self.is_close(img, match) for match in list))
+    @classmethod
+    def match(cls, img, list):
+        return any((cls.is_close(img, match) for match in list))
 
 
 
 
 
-    @staticmethod
-    def is_close(img1, img2):
+    @classmethod
+    def is_close(cls, img1, img2):
         hist1 = img1.histogram() if isinstance(img1, Image.Image) else img1
         hist2 = img2.histogram() if isinstance(img2, Image.Image) else img2
-        return ImageCrop.rms(hist1, hist2) < IMAGE_EPSILON
+        return cls.rms(hist1, hist2) < IMAGE_EPSILON
 
 
 
@@ -247,19 +276,29 @@ class ImageCrop:
 
                     elif name == 'belowGround':
                         opts = self.bfs_below_ground(x, y)
-                        self.json.add_block('groundPlatform', *opts)
+                        self.json.add_block('groundPlatform', *opts.rect())
+
+                    elif name == 'ground':
+                        opts = self.bfs_ground(x, y)
+                        self.json.add_block('groundPlatform', *opts.rect())
+
+                    elif name == "pipe":
+                        # extra if plant coming out
+                        opts = self.bfs_pipe(x, y)
+                        if opts.extra:
+                            self.json.add_block('blockPipe', opts.x, opts.y, opts.height, 'plant')
+                        else:
+                            self.json.add_block('blockPipe', opts.x, opts.y, opts.height, 'none')
+
+                    elif name == 'pipeleft':
+                        self.json.add_block('BlockPipeRotate', x, y, 2, 'none')
 
                     elif name == 'metal':
                         self.json.add_block('blockMetal', x, y)
 
-                    elif name == "pipe":
-                        opts = self.bfs_pipe(x, y)
-                        self.json.add_block('blockPipe', *opts, "none")
 
 
-                    elif name == 'ground':
-                        opts = self.bfs_ground(x, y)
-                        self.json.add_block('groundPlatform', *opts)
+
 
 
                     elif name == 'questionMushroom':
@@ -348,12 +387,9 @@ def unittest():
 
     #test.search()
     print("passed unittests")
-#y = JsonMap()
-#y.add_block('b', 0, 0)
-#print(y.dumps())
-#ImageCrop.get_cord(Image.open("1-1.png"), 1,0, x, y)
-#
-# = top pixel before off ground for images
+
+
+
 unittest()
 
 level1 = ImageCrop(0, 240, join("maps","1-1.png"), ImageCrop.aboveitems, background_color="#5c94fc", map_name="1-1above")
@@ -366,11 +402,11 @@ level1under.search()
 level1under.save_json()
 print("Done lv1 bot")
 
-'''
+
 level2 = ImageCrop(0, 480, join("maps","1-2.png"), ImageCrop.belowitems, background_color="#000000", map_name="1-2below")
 level2.search()
 level2.save_json()
-'''
+
 
 '''
 level3 = ImageCrop(0, 240, join("maps","1-3.png"), ImageCrop.aboveitems, background_color="#5c94fc", map_name="1-3above")
