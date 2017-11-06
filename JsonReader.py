@@ -26,7 +26,7 @@ class JsonMap:
     def set_background_color(self, str):
         assert str.startswith("#")
 
-        self.dict['background'] = str
+        self.dict['BackgroundColor'] = str
 
     def set_map_name(self, str):
         self.dict['MapName'] = str
@@ -51,15 +51,20 @@ class JsonMap:
 
 
 
+
+
     def create_empty(self):
         self.dict['MapName'] = ''
         self.dict['blocks'] = OrderedDict()
         self.dict['entities'] = OrderedDict()
-        self.dict['background'] = None
-        self.dict['default_entry'] = [0, 64]
+        self.dict['BackgroundColor'] = None
+        self.dict['DefaultEntry'] = [0, 64]
         self.dict['width'] = None
         self.dict['height'] = None
         self.dict['MapTime'] = 300
+        self.dict['NextLevel'] = 'None'
+        self.dict['LinkedLevel'] = 'None'
+        self.dict['OnDead'] = 'None'
 
 
 

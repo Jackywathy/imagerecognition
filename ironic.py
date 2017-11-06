@@ -64,6 +64,7 @@ class ImageCrop:
 
         'goomba': Image.open(join('above', 'goomba.png')).histogram(),
         'koopa' : Image.open(join('above', 'koopa.png')).histogram(),
+        #'coin' :Image.open(join('above', 'coin.png')).histogram(),
 
         'ground': Image.open(join("above", "ground.png")).histogram(),
 
@@ -98,6 +99,8 @@ class ImageCrop:
         'goomba': Image.open(join('below', 'goomba.png')).histogram(),
         'koopa' : Image.open(join('below', 'koopa.png')).histogram(),
 
+        'coin': Image.open(join('below', 'coin.png')).histogram(),
+
         'ground': Image.open(join("above", "ground.png")).histogram(),
         'belowGround' : Image.open(join("below", "ground.png")).histogram(),
 
@@ -114,6 +117,24 @@ class ImageCrop:
      ],
      [Image.open(join('below', 'plant.png')).histogram()]
     )
+
+    castleItems = TextureStore({
+        'metal': Image.open(join('castle', "metal.png")).histogram(),
+
+
+        'questionMushroom': Image.open(join('castle', "questionmushroom.png")).histogram(),
+        'invisCoin': Image.open(join('castle', 'inviscoin.png')).histogram(),
+        'firestick' :Image.open(join('castle', 'firestick.png'))
+    },
+        [Image.open(join('below', 'pipe1.png')).histogram(),
+         Image.open(join('below', 'pipe2.png')).histogram(),
+         Image.open(join('below', 'pipe3.png')).histogram(),
+         Image.open(join('below', 'pipe4.png')).histogram()
+         ],
+        [Image.open(join('below', 'plant.png')).histogram()]
+    )
+
+
 
     def get_image(self, x, y):
         return self.map.crop((self.startx + x*BLOCK_SIZE,
@@ -139,9 +160,6 @@ class ImageCrop:
         self.endx = self.map.width if endx == -1 else endx
         self.endy = 0 if endy == -1 else endy
 
-        self.width =self.map.width
-        self.height = self.map.height
-
         self.width_blocks = (self.endx - startx) // BLOCK_SIZE
         self.height_blocks = (starty - self.endy) // BLOCK_SIZE
 
@@ -151,13 +169,15 @@ class ImageCrop:
             self.theme = 'overworld'
         elif search_items == self.belowitems:
             self.theme = 'underground'
+        elif search_items == self.castleItems:
+            self.theme = 'castle'
         else:
             raise Exception()
 
         self.json.set_theme(self.theme)
         self.json.set_background_color(background_color)
-        self.json.set_width(self.width_blocks*GBLOCK_SIZE)
-        self.json.set_height(self.height_blocks*GBLOCK_SIZE)
+        self.json.set_width(self.width_blocks)
+        self.json.set_height(self.height_blocks)
         self.json.set_map_name(map_name)
 
         self.todo_items = {(x,y) for x in range(self.width_blocks) for y in range(self.height_blocks)}
@@ -341,6 +361,9 @@ class ImageCrop:
                     elif name=='cloud':
                         self.json.add_block('blockCloud', x, y)
 
+                    elif name == "firestick":
+                        self.json.add_block("firestick", x, y)
+
 
 
                     else:
@@ -388,10 +411,39 @@ def unittest():
     #test.search()
     print("passed unittests")
 
+OVERWORLD_COLOR = "#5c94fc"
+UNDERGROUND_COLOR = "#000000"
+CASTLE_COLOR = "#000001"
+def make_map(fp, color, outname, startx, starty, endx=-1, endy=-1):
 
+    if color == OVERWORLD_COLOR:
+        items = ImageCrop.aboveitems
+    elif color == UNDERGROUND_COLOR:
+        items = ImageCrop.belowitems
+    elif color == CASTLE_COLOR:
+        items = ImageCrop.castleItems
+    else:
+        raise Exception()
+
+    x = ImageCrop(startx, starty, join("maps", fp),
+                  items,
+                  background_color=color, map_name=outname, endx=endx, endy=endy)
+    x.search()
+    x.save_json()
+
+def _1_2():
+    make_map('1-2.png', OVERWORLD_COLOR, '1-2above', 0, 240)
+    make_map('1-2.png', UNDERGROUND_COLOR, '1-2under', 0, 480, endy=240)
+
+def _2_1():
+    make_map('2-1.png', OVERWORLD_COLOR, '2-1above', 0, 480)
+    make_map('2-1.png', UNDERGROUND_COLOR, '2-1under', 1600, 0, endx=1872, endy=208)
 
 unittest()
+#make_map('2-1.png', UNDERGROUND_COLOR, '2-1under', 1600, 720, endx=1872, endy=512)
+make_map('1-4.png', CASTLE_COLOR, '1-4above', 0, 240)
 
+'''
 level1 = ImageCrop(0, 240, join("maps","1-1.png"), ImageCrop.aboveitems, background_color="#5c94fc", map_name="1-1above")
 level1.search()
 level1.save_json()
@@ -401,23 +453,23 @@ level1under = ImageCrop(2368, 480, join("maps","1-1.png"), ImageCrop.belowitems,
 level1under.search()
 level1under.save_json()
 print("Done lv1 bot")
-
-
+'''
+'''
 level2 = ImageCrop(0, 480, join("maps","1-2.png"), ImageCrop.belowitems, background_color="#000000", map_name="1-2below")
 level2.search()
 level2.save_json()
-
+'''
 
 '''
 level3 = ImageCrop(0, 240, join("maps","1-3.png"), ImageCrop.aboveitems, background_color="#5c94fc", map_name="1-3above")
 level3.search()
 level3.save_json()
 '''
-
+'''
 level1 = ImageCrop(0, 480, join("maps","2-1.png"), ImageCrop.aboveitems, background_color="#5c94fc", map_name="2-1above")
 level1.search()
 level1.save_json()
 print("finished")
 
-
+'''
 #ImageCrop.get_cord(Image.open("maps/1-2.png"), 70 ,7, 0, 464)
